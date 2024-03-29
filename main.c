@@ -1,30 +1,48 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-typedef struct {
+int juego_resuelto[9][9] = {
+        {6, 9, 4, 1, 5, 7, 8, 3, 2},
+        {8, 1, 2, 3, 9, 6, 7, 4, 5},
+        {3, 5, 7, 2, 8, 4, 1, 9, 6},
+        {2, 6, 9, 4, 1, 5, 3, 7, 8},
+        {5, 8, 1, 7, 6, 3, 4, 2, 9},
+        {4, 7, 3, 9, 2, 8, 5, 6, 1},
+        {1, 3, 5, 6, 7, 2, 9, 8, 4},
+        {9, 4, 6, 8, 3, 1, 2, 5, 7},
+        {7, 2, 8, 5, 4, 9, 6, 1, 3}
+};
+
+struct Movimiento {
     int x;
     int y;
     int valor;
-} Movimiento;
+};
 
-typedef struct {
+typedef struct Movimiento Movimiento;
+
+struct Registro {
     int modificaciones;
-    int tablero[9][9];
+    int juego_inicial[9][9];
     int juego[9][9];
     char nombre[20];
-    Movimiento ultimo_movimiento;
-} Registro;
+    struct Movimiento ultimo_movimiento;
+};
+
+typedef struct Registro Registro;
 
 void mostrar_menu(Registro *registro);
 
 int leer_entero();
 
-void imprimir_juego_inicial();
+void imprimir_juego(int matriz[9][9]);
 
-void imprimir_juego_actual();
+void copiar_matriz(int origen[9][9], int destino[9][9]);
 
-void ingresar_valor();
+void nuevo_juego(Registro *registro);
 
-void cambiar_valor();
+void ingresar_valor(Registro *registro);
 
 void borrar_valor();
 
@@ -36,17 +54,11 @@ void intercambiar_filas();
 
 void guardar_juego();
 
-// Cargar juego preexistente.
-// Leer la matriz inicial del juego
-// Leer otra matriz con el avance hasta el momento del usuario
-
-// Guardar el avance del juego
-// Guardar la matriz inicial del juego
-// Guardar otra matriz con el avance hasta el momento del usuario
-
 int main() {
     Registro registro;
     int opcion;
+
+    nuevo_juego(&registro);
 
     printf("Ingrese su nombre:\n");
     scanf("%s", registro.nombre);
@@ -56,30 +68,27 @@ int main() {
         opcion = leer_entero();
         switch (opcion) {
             case 1:
-                imprimir_juego_actual();
+                imprimir_juego(registro.juego);
                 break;
             case 2:
-                ingresar_valor();
+                imprimir_juego(registro.juego_inicial);
                 break;
             case 3:
-                imprimir_juego_inicial();
+                ingresar_valor();
                 break;
             case 4:
-                cambiar_valor();
-                break;
-            case 5:
                 borrar_valor();
                 break;
-            case 6:
+            case 5:
                 rotar_juego();
                 break;
-            case 7:
+            case 6:
                 intercambiar_numeros();
                 break;
-            case 8:
+            case 7:
                 intercambiar_filas();
                 break;
-            case 9:
+            case 8:
                 printf("Bye.\n");
                 break;
             default:
@@ -95,16 +104,15 @@ void mostrar_menu(Registro *registro) {
     printf("Jugador: %s\n", registro->nombre);
     printf("Opciones para jugar:\n");
     printf("1. Imprimir estado actual del juego.\n");
-    printf("2. Ingresar valor en una casilla.\n");
-    printf("3. Imprimir el tablero inicial.\n");
-    printf("4. Cambiar un valor.\n");
-    printf("5. Borrar un valor.\n");
+    printf("2. Imprimir el tablero inicial.\n");
+    printf("3. Ingresar un valor en una casilla.\n");
+    printf("4. Borrar un valor.\n");
     // Para estas opciones el juego debe estar resuelto
     printf("Opciones para modificar el juego: \n");
-    printf("6. Rotar tablero.\n");
-    printf("7. Intercambiar n%cmeros.\n", 163);
-    printf("8. Intercambiar filas.\n");
-    printf("9. Salir del juego.\n");
+    printf("5. Rotar tablero.\n");
+    printf("6. Intercambiar n%cmeros.\n", 163);
+    printf("7. Intercambiar filas.\n");
+    printf("8. Salir del juego.\n");
 }
 
 int leer_entero() {
@@ -120,13 +128,55 @@ int leer_entero() {
     return numero;
 }
 
-void imprimir_juego_inicial() {}
+void copiar_matriz(int origen[9][9], int destino[9][9]) {
+    int *ptr_origen = (int *) origen;
+    int *ptr_destino = (int *) destino;
+    for (int i = 0; i < 9 * 9; i++) {
+        *ptr_destino = *ptr_origen;
+        ptr_destino++;
+        ptr_origen++;
+    }
+}
 
-void imprimir_juego_actual() {}
+void imprimir_juego(int matriz[9][9]) {
+    printf("+-------+-------+-------+\n");
+    for (int i = 0; i < 9; i++) {
+        if (i != 0 && i % 3 == 0) {
+            printf("+-------+-------+-------+\n");
+        }
+        for (int j = 0; j < 9; j++) {
+            if (j == 0 || j % 3 == 0) {
+                printf("| ");
+            }
+            printf("%d ", matriz[i][j]);
+        }
+        printf("|\n");
+    }
+    printf("+-------+-------+-------+\n");
+}
 
-void ingresar_valor() {}
+void nuevo_juego(Registro *registro) {
+    int i, j, x, contador;
+    srand(time(NULL));
 
-void cambiar_valor() {}
+    copiar_matriz(juego_resuelto, registro->juego_inicial);
+
+    for (i = 0; i < 9; i++) {
+        contador = rand() % 2 + 5; // Número aleatorio entre 5 y 6
+        x = 0;
+        while (x < contador) {
+            j = rand() % 9;
+            if (registro->juego_inicial[i][j] != 0) {
+                registro->juego_inicial[i][j] = 0;
+                x++;
+            }
+        }
+    }
+
+    copiar_matriz(registro->juego_inicial, registro->juego);
+}
+
+void ingresar_valor(Registro *registro) {}
 
 void borrar_valor() {}
 
