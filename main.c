@@ -42,6 +42,10 @@ void copiar_matriz(int origen[9][9], int destino[9][9]);
 
 void nuevo_juego(Registro *registro);
 
+int validar_fila(Registro *registro, int i, int x);
+
+int validar_columna(Registro *registro, int j, int x);
+
 void ingresar_valor(Registro *registro);
 
 void borrar_valor(Registro *registro);
@@ -178,15 +182,40 @@ void nuevo_juego(Registro *registro) {
     copiar_matriz(registro->juego_inicial, registro->juego);
 }
 
+int validar_fila(Registro *registro, int fila, int x) {
+    int j;
+    for (j = 0; j < 9; j++) {
+        if (registro->juego[fila][j] == x) {
+            printf("Valor no permitido. %x se repite en la casilla %dx%d.\n", x, fila + 1, j + 1);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int validar_columna(Registro *registro, int columna, int x) {
+    int i;
+    for (i = 0; i < 9; i++) {
+        if (registro->juego[i][columna] == x) {
+            printf("Valor no permitido. %x se repite en la casilla %dx%d.\n", x, i + 1, columna + 1);
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void ingresar_valor(Registro *registro) {
-    int i, j, x;
+    int fila, columna, x;
     printf("Ingrese la fila (1-9):\n");
-    i = leer_entero() - 1;
+    fila = leer_entero() - 1;
     printf("Ingrese la columna (1-9):\n");
-    j = leer_entero() - 1;
+    columna = leer_entero() - 1;
     printf("Ingrese el valor:\n");
     x = leer_entero();
-    registro->juego[i][j] = x;
+
+    if (validar_fila(registro, fila, x) && validar_columna(registro, columna, x)) {
+        registro->juego[fila][columna] = x;
+    }
 }
 
 void borrar_valor(Registro *registro) {
