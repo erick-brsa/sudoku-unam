@@ -44,7 +44,7 @@ void nuevo_juego(Registro *registro);
 
 void ingresar_valor(Registro *registro);
 
-void borrar_valor();
+void borrar_valor(Registro *registro);
 
 void rotar_juego();
 
@@ -61,6 +61,7 @@ int main() {
     nuevo_juego(&registro);
 
     printf("Ingrese su nombre:\n");
+    printf(">%c", 255);
     scanf("%s", registro.nombre);
 
     do {
@@ -74,10 +75,10 @@ int main() {
                 imprimir_juego(registro.juego_inicial);
                 break;
             case 3:
-                ingresar_valor();
+                ingresar_valor(&registro);
                 break;
             case 4:
-                borrar_valor();
+                borrar_valor(&registro);
                 break;
             case 5:
                 rotar_juego();
@@ -119,6 +120,7 @@ int leer_entero() {
     int numero;
     int esValido;
     do {
+        printf(">%c", 255);
         esValido = (scanf("%d", &numero) == 1);
         if (!esValido) {
             printf("Error: Debes ingresar un n%cmero.\n", 163);
@@ -176,9 +178,25 @@ void nuevo_juego(Registro *registro) {
     copiar_matriz(registro->juego_inicial, registro->juego);
 }
 
-void ingresar_valor(Registro *registro) {}
+void ingresar_valor(Registro *registro) {
+    int i, j, x;
+    printf("Ingrese la fila (1-9):\n");
+    i = leer_entero() - 1;
+    printf("Ingrese la columna (1-9):\n");
+    j = leer_entero() - 1;
+    printf("Ingrese el valor:\n");
+    x = leer_entero();
+    registro->juego[i][j] = x;
+}
 
-void borrar_valor() {}
+void borrar_valor(Registro *registro) {
+    int i, j;
+    printf("Ingrese la fila (1-9):\n");
+    i = leer_entero() - 1;
+    printf("Ingrese la columna (1-9):\n");
+    j = leer_entero() - 1;
+    registro->juego[i][j] = 0;
+}
 
 void rotar_juego() {}
 
