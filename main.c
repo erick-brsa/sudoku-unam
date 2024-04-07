@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -33,7 +34,11 @@ struct Registro {
 
 typedef struct Registro Registro;
 
+void menu_juego(Registro *juego);
+
 void mostrar_menu(Registro *registro);
+
+void cargar_registro(Registro *registro, char nombre_archivo[25]);
 
 int leer_entero();
 
@@ -97,55 +102,83 @@ int main() {
     return 0;
 }
 
-void cargar_juego() {}
-
-void nuevo_juego() {
-    Registro registro;
+void menu_juego(Registro *registro) {
     int opcion;
-    int intercambiar;
-
-    printf("Ingrese su nombre:\n");
-    printf(">%c", 255);
-    scanf("%s", registro.nombre);
-
-    ocultar_valores(&registro, juego_resuelto);
-
     do {
-        mostrar_menu(&registro);
+        mostrar_menu(registro);
         opcion = leer_entero();
         switch (opcion) {
             case 1:
-                imprimir_juego(registro.juego);
+                imprimir_juego(registro->juego);
                 break;
             case 2:
-                imprimir_juego(registro.juego_inicial);
+                imprimir_juego(registro->juego_inicial);
                 break;
             case 3:
-                ingresar_valor(&registro);
+                ingresar_valor(registro);
                 break;
             case 4:
-                borrar_valor(&registro);
+                borrar_valor(registro);
                 break;
             case 5:
-                rotar_juego(&registro);
+                rotar_juego(registro);
                 break;
             case 6:
-                intercambiar_numeros(&registro);
+                intercambiar_numeros(registro);
                 break;
             case 7:
-                intercambiar_filas(&registro);
+                intercambiar_filas(registro);
                 break;
             case 8:
-                intercambiar_columnas(&registro);
+                intercambiar_columnas(registro);
                 break;
             case 9:
-                guardar_juego(&registro);
+                guardar_juego(registro);
                 break;
             default:
                 printf("Ingrese una opci%c v%clida.\n", 162, 160);
                 break;
         }
     } while (opcion != 9);
+}
+
+void cargar_juego() {
+    Registro registro = {
+            .modificaciones = 0,
+            .juego_inicial = {{0}},
+            .juego_inicial_modificado = {{0}},
+            .juego = {{0}},
+            .nombre = "",
+            .ultimo_movimiento = {.fila = 0, .columna = 0, .valor = 0}
+    };
+    char nombre_archivo[25];
+
+    printf("Ingrese el nombre:%c", 255);
+    scanf("%s", registro.nombre);
+
+    strcpy(nombre_archivo, registro.nombre);
+    strcat(nombre_archivo, ".txt");
+
+    cargar_registro(&registro, nombre_archivo);
+    menu_juego(&registro);
+}
+
+void nuevo_juego() {
+    Registro registro = {
+            .modificaciones = 0,
+            .juego_inicial = {{0}},
+            .juego_inicial_modificado = {{0}},
+            .juego = {{0}},
+            .nombre = "",
+            .ultimo_movimiento = {.fila = 0, .columna = 0, .valor = 0}
+    };
+
+    printf("Ingrese su nombre:\n");
+    printf(">%c", 255);
+    scanf("%s", registro.nombre);
+
+    ocultar_valores(&registro, juego_resuelto);
+    menu_juego(&registro);
 }
 
 void mostrar_menu(Registro *registro) {
@@ -283,7 +316,11 @@ void ingresar_valor(Registro *registro) {
     }
 
     if (validar_fila(registro, fila, valor) && validar_columna(registro, columna, valor)) {
-        Movimiento movimiento = {fila, columna, valor};
+        Movimiento movimiento = {
+                .fila = fila,
+                .columna = columna,
+                .valor = valor
+        };
         registro->ultimo_movimiento = movimiento;
         registro->juego[fila][columna] = valor;
         registro->modificaciones++;
@@ -309,7 +346,11 @@ void borrar_valor(Registro *registro) {
         return;
     }
 
-    Movimiento movimiento = {fila, columna, 0};
+    Movimiento movimiento = {
+            .fila = fila,
+            .columna = columna,
+            .valor = 0
+    };
     registro->ultimo_movimiento = movimiento;
     registro->juego[fila][columna] = 0;
     registro->modificaciones++;
@@ -403,4 +444,87 @@ void intercambiar_columnas(Registro *registro) {
     imprimir_juego(registro->juego);
 }
 
-void guardar_juego(Registro *registro) {}
+void guardar_juego(Registro *registro) {
+    char nombreArchivo[25];
+    int i, j;
+
+    strcpy(nombreArchivo, registro->nombre);
+    strcat(nombreArchivo, ".txt");
+
+    FILE *archivo = fopen(nombreArchivo, "w");
+
+    if (archivo == NULL) {
+        printf("No se pudo abrir el archivo.\n");
+        return;
+    }
+
+    // Escribir los datos del Registro en el archivo
+    fprintf(archivo, "Nombre: %s\n", registro->nombre);
+    fprintf(archivo, "Modificaciones: %d\n", registro->modificaciones);
+    fprintf(archivo, "Ultimo movimiento: %d %d %d\n",
+            registro->ultimo_movimiento.fila,
+            registro->ultimo_movimiento.columna,
+            registro->ultimo_movimiento.valor);
+    fprintf(archivo, "Juego inicial:\n");
+    for (i = 0; i < 9; i++) {
+        for (j = 0; j < 9; j++) {
+            fprintf(archivo, "%d ", registro->juego_inicial[i][j]);
+        }
+        fprintf(archivo, "\n");
+    }
+    fprintf(archivo, "Juego inicial modificado:\n");
+    for (i = 0; i < 9; i++) {
+        for (j = 0; j < 9; j++) {
+            fprintf(archivo, "%d ", registro->juego_inicial_modificado[i][j]);
+        }
+        fprintf(archivo, "\n");
+    }
+    fprintf(archivo, "Juego:\n");
+    for (i = 0; i < 9; i++) {
+        for (j = 0; j < 9; j++) {
+            fprintf(archivo, "%d ", registro->juego[i][j]);
+        }
+        fprintf(archivo, "\n");
+    }
+
+    fclose(archivo);
+}
+
+void cargar_registro(Registro *registro, char nombre_archivo[25]) {
+    int i, j;
+    FILE *archivo = fopen(nombre_archivo, "r");
+
+    if (archivo == NULL) {
+        printf("No se pudo abrir el archivo %s.\n", nombre_archivo);
+        return;
+    }
+
+    fscanf(archivo, "Nombre: %s\n", registro->nombre);
+    fscanf(archivo, "Modificaciones: %d\n", &registro->modificaciones);
+    fscanf(archivo, "Ultimo movimiento: %d %d %d\n",
+           &registro->ultimo_movimiento.fila,
+           &registro->ultimo_movimiento.fila,
+           &registro->ultimo_movimiento.fila);
+    fscanf(archivo, "Juego inicial:\n");
+    for (i = 0; i < 9; i++) {
+        for (j = 0; j < 9; j++) {
+            fscanf(archivo, "%d", &registro->juego_inicial[i][j]);
+        }
+        fscanf(archivo, "\n");
+    }
+    fscanf(archivo, "Juego inicial modificado:\n");
+    for (i = 0; i < 9; i++) {
+        for (j = 0; j < 9; j++) {
+            fscanf(archivo, "%d", &registro->juego_inicial_modificado[i][j]);
+        }
+        fscanf(archivo, "\n");
+    }
+    fscanf(archivo, "Juego:\n");
+    for (i = 0; i < 9; i++) {
+        for (j = 0; j < 9; j++) {
+            fscanf(archivo, "%d", &registro->juego[i][j]);
+        }
+        fscanf(archivo, "\n");
+    }
+    fclose(archivo);
+}
