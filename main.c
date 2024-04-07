@@ -25,6 +25,7 @@ typedef struct Movimiento Movimiento;
 struct Registro {
     int modificaciones;
     int juego_inicial[9][9];
+    int juego_inicial_modificado[9][9];
     int juego[9][9];
     char nombre[20];
     struct Movimiento ultimo_movimiento;
@@ -42,9 +43,13 @@ void copiar_matriz(int origen[9][9], int destino[9][9]);
 
 void ocultar_valores(Registro *registro, int resuelto[9][9]);
 
+int validar_casilla(int fila, int columna);
+
 int validar_fila(Registro *registro, int i, int valor);
 
 int validar_columna(Registro *registro, int j, int valor);
+
+int es_modificable(Registro *registro, int fila, int columna);
 
 void ingresar_valor(Registro *registro);
 
@@ -54,9 +59,11 @@ void rotar_juego(Registro *registro);
 
 void intercambiar_numeros(Registro *registro);
 
-void intercambiar_filas();
+void intercambiar_filas(Registro *registro);
 
-void guardar_juego();
+void intercambiar_columnas(Registro *registro);
+
+void guardar_juego(Registro *registro);
 
 void cargar_juego();
 
@@ -95,6 +102,7 @@ void cargar_juego() {}
 void nuevo_juego() {
     Registro registro;
     int opcion;
+    int intercambiar;
 
     printf("Ingrese su nombre:\n");
     printf(">%c", 255);
@@ -125,15 +133,19 @@ void nuevo_juego() {
                 intercambiar_numeros(&registro);
                 break;
             case 7:
-                intercambiar_filas();
+                intercambiar_filas(&registro);
                 break;
             case 8:
+                intercambiar_columnas(&registro);
+                break;
+            case 9:
+                guardar_juego(&registro);
                 break;
             default:
                 printf("Ingrese una opci%c v%clida.\n", 162, 160);
                 break;
         }
-    } while (opcion != 8);
+    } while (opcion != 9);
 }
 
 void mostrar_menu(Registro *registro) {
@@ -148,7 +160,8 @@ void mostrar_menu(Registro *registro) {
     printf("5. Rotar tablero.\n");
     printf("6. Intercambiar n%cmeros.\n", 163);
     printf("7. Intercambiar filas.\n");
-    printf("8. Volver al men%c inicial.\n", 163);
+    printf("8. Intercambiar columnas.\n");
+    printf("9. Guardar y volver al men%c inicial.\n", 163);
 }
 
 int leer_entero() {
@@ -211,7 +224,15 @@ void ocultar_valores(Registro *registro, int resuelto[9][9]) {
         }
     }
 
+    copiar_matriz(registro->juego_inicial, registro->juego_inicial_modificado);
     copiar_matriz(registro->juego_inicial, registro->juego);
+}
+
+int validar_casilla(int fila, int columna) {
+    if (fila < 0 || fila > 0 || columna < 0 || columna > 8) {
+        return 0;
+    }
+    return 1;
 }
 
 int validar_fila(Registro *registro, int fila, int valor) {
@@ -236,6 +257,12 @@ int validar_columna(Registro *registro, int columna, int valor) {
     return 1;
 }
 
+int es_modificable(Registro *registro, int fila, int columna) {
+    // Devuelve 1 si la casilla es modificable
+    // Devuelve 0 si no si no se puede modificar
+    return registro->juego_inicial_modificado[fila][columna] == 0;
+}
+
 void ingresar_valor(Registro *registro) {
     int fila, columna, valor;
     printf("Ingrese la fila (1-9):\n");
@@ -244,6 +271,16 @@ void ingresar_valor(Registro *registro) {
     columna = leer_entero() - 1;
     printf("Ingrese el valor:\n");
     valor = leer_entero();
+
+    if (!validar_casilla(fila, columna)) {
+        printf("Casilla no permitida.\n");
+        return;
+    }
+
+    if (!es_modificable(registro, fila, columna)) {
+        printf("Advertencia: No puedes modificar un valor del juego inicial.\n");
+        return;
+    }
 
     if (validar_fila(registro, fila, valor) && validar_columna(registro, columna, valor)) {
         Movimiento movimiento = {fila, columna, valor};
@@ -262,6 +299,16 @@ void borrar_valor(Registro *registro) {
     printf("Ingrese la columna (1-9):\n");
     columna = leer_entero() - 1;
 
+    if (!validar_casilla(fila, columna)) {
+        printf("Casilla no permitida.\n");
+        return;
+    }
+
+    if (!es_modificable(registro, fila, columna)) {
+        printf("Advertencia: No puedes borrar un valor del juego inicial.\n");
+        return;
+    }
+
     Movimiento movimiento = {fila, columna, 0};
     registro->ultimo_movimiento = movimiento;
     registro->juego[fila][columna] = 0;
@@ -271,14 +318,16 @@ void borrar_valor(Registro *registro) {
 }
 
 void rotar_juego(Registro *registro) {
-    int i, j, juego_rotado[9][9];
+    int i, j, juego_rotado[9][9], juego_inicial_rotado[9][9];
 
     for (i = 0; i < 9; i++) {
         for (j = 0; j < 9; j++) {
-            juego_rotado[j][i] = registro->juego_inicial[8 - i][j];
+            juego_inicial_rotado[j][i] = registro->juego_inicial[8 - i][j];
+            juego_rotado[j][i] = registro->juego[8 - i][j];
         }
     }
 
+    copiar_matriz(juego_inicial_rotado, registro->juego_inicial_modificado);
     copiar_matriz(juego_rotado, registro->juego);
     imprimir_juego(registro->juego);
 }
@@ -308,6 +357,50 @@ void intercambiar_numeros(Registro *registro) {
     imprimir_juego(registro->juego);
 }
 
-void intercambiar_filas() {}
+void intercambiar_filas(Registro *registro) {
+    int temp, grupo, fila0, fila1, fila2, i;
 
-void guardar_juego() {}
+    for (grupo = 0; grupo < 3; grupo++) {
+        fila0 = grupo * 3;
+
+        fila1 = fila0 + (rand() % 3);
+        do {
+            fila2 = fila0 + (rand() % 3);
+        } while (fila1 == fila2);
+
+        for (i = 0; i < 9; i++) {
+            temp = registro->juego[fila1][i];
+            registro->juego[fila1][i] = registro->juego[fila2][i];
+            registro->juego[fila2][i] = temp;
+            temp = registro->juego_inicial_modificado[fila1][i];
+            registro->juego_inicial_modificado[fila1][i] = registro->juego_inicial_modificado[fila2][i];
+            registro->juego_inicial_modificado[fila2][i] = temp;
+        }
+    }
+    imprimir_juego(registro->juego);
+}
+
+void intercambiar_columnas(Registro *registro) {
+    int temp, grupo, columna0, columna1, columna2, i;
+
+    for (grupo = 0; grupo < 3; grupo++) {
+        columna0 = grupo * 3;
+
+        columna1 = columna0 + (rand() % 3);
+        do {
+            columna2 = columna0 + (rand() % 3);
+        } while (columna1 == columna2);
+
+        for (i = 0; i < 9; i++) {
+            temp = registro->juego[i][columna1];
+            registro->juego[i][columna1] = registro->juego[i][columna2];
+            registro->juego[i][columna2] = temp;
+            temp = registro->juego_inicial_modificado[i][columna1];
+            registro->juego_inicial_modificado[i][columna1] = registro->juego_inicial_modificado[i][columna2];
+            registro->juego_inicial_modificado[i][columna2] = temp;
+        }
+    }
+    imprimir_juego(registro->juego);
+}
+
+void guardar_juego(Registro *registro) {}
