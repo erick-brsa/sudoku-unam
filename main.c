@@ -29,7 +29,7 @@ struct Registro {
     int juego_inicial_modificado[9][9];
     int juego[9][9];
     char nombre[20];
-    struct Movimiento ultimo_movimiento;
+    Movimiento ultimo_movimiento;
 };
 
 typedef struct Registro Registro;
@@ -74,6 +74,8 @@ void cargar_juego();
 
 void nuevo_juego();
 
+int validar_valor(int valor);
+
 int main() {
     int opcion;
 
@@ -96,110 +98,15 @@ int main() {
                 break;
             default:
                 printf("Ingrese una opci%c v%clida.\n", 162, 160);
+                break;
         }
     } while (opcion != 3);
 
     return 0;
 }
 
-void menu_juego(Registro *registro) {
-    int opcion;
-    do {
-        mostrar_menu(registro);
-        opcion = leer_entero();
-        switch (opcion) {
-            case 1:
-                imprimir_juego(registro->juego);
-                break;
-            case 2:
-                imprimir_juego(registro->juego_inicial);
-                break;
-            case 3:
-                ingresar_valor(registro);
-                break;
-            case 4:
-                borrar_valor(registro);
-                break;
-            case 5:
-                rotar_juego(registro);
-                break;
-            case 6:
-                intercambiar_numeros(registro);
-                break;
-            case 7:
-                intercambiar_filas(registro);
-                break;
-            case 8:
-                intercambiar_columnas(registro);
-                break;
-            case 9:
-                guardar_juego(registro);
-                break;
-            default:
-                printf("Ingrese una opci%c v%clida.\n", 162, 160);
-                break;
-        }
-    } while (opcion != 9);
-}
-
-void cargar_juego() {
-    Registro registro = {
-            .modificaciones = 0,
-            .juego_inicial = {{0}},
-            .juego_inicial_modificado = {{0}},
-            .juego = {{0}},
-            .nombre = "",
-            .ultimo_movimiento = {.fila = 0, .columna = 0, .valor = 0}
-    };
-    char nombre_archivo[25];
-
-    printf("Ingrese el nombre:%c", 255);
-    scanf("%s", registro.nombre);
-
-    strcpy(nombre_archivo, registro.nombre);
-    strcat(nombre_archivo, ".txt");
-
-    cargar_registro(&registro, nombre_archivo);
-    menu_juego(&registro);
-}
-
-void nuevo_juego() {
-    Registro registro = {
-            .modificaciones = 0,
-            .juego_inicial = {{0}},
-            .juego_inicial_modificado = {{0}},
-            .juego = {{0}},
-            .nombre = "",
-            .ultimo_movimiento = {.fila = 0, .columna = 0, .valor = 0}
-    };
-
-    printf("Ingrese su nombre:\n");
-    printf(">%c", 255);
-    scanf("%s", registro.nombre);
-
-    ocultar_valores(&registro, juego_resuelto);
-    menu_juego(&registro);
-}
-
-void mostrar_menu(Registro *registro) {
-    printf("Jugador: %s\n", registro->nombre);
-    printf("Opciones para jugar:\n");
-    printf("1. Imprimir estado actual del juego.\n");
-    printf("2. Imprimir el tablero inicial.\n");
-    printf("3. Ingresar un valor en una casilla.\n");
-    printf("4. Borrar un valor.\n");
-    // Para estas opciones el juego debe estar resuelto
-    printf("Opciones para modificar el juego: \n");
-    printf("5. Rotar tablero.\n");
-    printf("6. Intercambiar n%cmeros.\n", 163);
-    printf("7. Intercambiar filas.\n");
-    printf("8. Intercambiar columnas.\n");
-    printf("9. Guardar y volver al men%c inicial.\n", 163);
-}
-
 int leer_entero() {
-    int numero;
-    int esValido;
+    int numero, esValido;
     do {
         printf(">%c", 255);
         esValido = (scanf("%d", &numero) == 1);
@@ -261,11 +168,110 @@ void ocultar_valores(Registro *registro, int resuelto[9][9]) {
     copiar_matriz(registro->juego_inicial, registro->juego);
 }
 
+void cargar_juego() {
+    Registro registro = {
+            .modificaciones = 0,
+            .juego_inicial = {{0}},
+            .juego_inicial_modificado = {{0}},
+            .juego = {{0}},
+            .nombre = "",
+            .ultimo_movimiento = {.fila = 0, .columna = 0, .valor = 0}
+    };
+    char nombre_archivo[25];
+
+    printf("Ingrese el nombre:%c", 255);
+    scanf("%s", registro.nombre);
+
+    strcpy(nombre_archivo, registro.nombre);
+    strcat(nombre_archivo, ".txt");
+
+    cargar_registro(&registro, nombre_archivo);
+    menu_juego(&registro);
+}
+
+void nuevo_juego() {
+    Registro registro = {
+            .modificaciones = 0,
+            .juego_inicial = {{0}},
+            .juego_inicial_modificado = {{0}},
+            .juego = {{0}},
+            .nombre = "",
+            .ultimo_movimiento = {.fila = 0, .columna = 0, .valor = 0}
+    };
+
+    printf("Ingrese su nombre:\n");
+    printf(">%c", 255);
+    scanf("%s", registro.nombre);
+
+    ocultar_valores(&registro, juego_resuelto);
+    menu_juego(&registro);
+}
+
+void mostrar_menu(Registro *registro) {
+    printf("Jugador: %s\n", registro->nombre);
+    printf("Opciones para jugar:\n");
+    printf("1. Imprimir estado actual del juego.\n");
+    printf("2. Imprimir el tablero inicial.\n");
+    printf("3. Ingresar un valor en una casilla.\n");
+    printf("4. Borrar un valor.\n");
+    // Para estas opciones el juego debe estar resuelto
+    printf("Opciones para modificar el juego: \n");
+    printf("5. Rotar tablero.\n");
+    printf("6. Intercambiar n%cmeros.\n", 163);
+    printf("7. Intercambiar filas.\n");
+    printf("8. Intercambiar columnas.\n");
+    printf("9. Guardar y volver al men%c inicial.\n", 163);
+}
+
+void menu_juego(Registro *registro) {
+    int opcion;
+    do {
+        mostrar_menu(registro);
+        opcion = leer_entero();
+        switch (opcion) {
+            case 1:
+                imprimir_juego(registro->juego);
+                break;
+            case 2:
+                imprimir_juego(registro->juego_inicial);
+                break;
+            case 3:
+                ingresar_valor(registro);
+                break;
+            case 4:
+                borrar_valor(registro);
+                break;
+            case 5:
+                rotar_juego(registro);
+                break;
+            case 6:
+                intercambiar_numeros(registro);
+                break;
+            case 7:
+                intercambiar_filas(registro);
+                break;
+            case 8:
+                intercambiar_columnas(registro);
+                break;
+            case 9:
+                guardar_juego(registro);
+                break;
+            default:
+                printf("Ingrese una opci%c v%clida.\n", 162, 160);
+                break;
+        }
+    } while (opcion != 9);
+}
+
 int validar_casilla(int fila, int columna) {
-    if (fila < 0 || fila > 0 || columna < 0 || columna > 8) {
+    if (fila < 0 || fila > 8 || columna < 0 || columna > 8) {
         return 0;
     }
     return 1;
+}
+
+int validar_valor(int valor) {
+    return (valor < 1 || valor > 9);
 }
 
 int validar_fila(Registro *registro, int fila, int valor) {
@@ -302,11 +308,17 @@ void ingresar_valor(Registro *registro) {
     fila = leer_entero() - 1;
     printf("Ingrese la columna (1-9):\n");
     columna = leer_entero() - 1;
-    printf("Ingrese el valor:\n");
-    valor = leer_entero();
 
     if (!validar_casilla(fila, columna)) {
         printf("Casilla no permitida.\n");
+        return;
+    }
+
+    printf("Ingrese el valor:\n");
+    valor = leer_entero();
+
+    if (validar_valor(valor)) {
+        printf("Advertencia: Est%cs ingresando un valor inv%clido.\n", 160, 160);
         return;
     }
 
@@ -371,6 +383,7 @@ void rotar_juego(Registro *registro) {
     copiar_matriz(juego_inicial_rotado, registro->juego_inicial_modificado);
     copiar_matriz(juego_rotado, registro->juego);
     imprimir_juego(registro->juego);
+    registro->modificaciones++;
 }
 
 void intercambiar_numeros(Registro *registro) {
@@ -393,9 +406,10 @@ void intercambiar_numeros(Registro *registro) {
             juego_intercambiado[i][j] = valores[juego_resuelto[i][j] - 1];
         }
     }
-    // copiar_matriz(juego_intercambiado, registro->juego);
+
     ocultar_valores(registro, juego_intercambiado);
     imprimir_juego(registro->juego);
+    registro->modificaciones++;
 }
 
 void intercambiar_filas(Registro *registro) {
@@ -419,6 +433,7 @@ void intercambiar_filas(Registro *registro) {
         }
     }
     imprimir_juego(registro->juego);
+    registro->modificaciones++;
 }
 
 void intercambiar_columnas(Registro *registro) {
@@ -442,6 +457,7 @@ void intercambiar_columnas(Registro *registro) {
         }
     }
     imprimir_juego(registro->juego);
+    registro->modificaciones++;
 }
 
 void guardar_juego(Registro *registro) {
@@ -496,15 +512,15 @@ void cargar_registro(Registro *registro, char nombre_archivo[25]) {
 
     if (archivo == NULL) {
         printf("No se pudo abrir el archivo %s.\n", nombre_archivo);
-        return;
+        exit(1);
     }
 
     fscanf(archivo, "Nombre: %s\n", registro->nombre);
     fscanf(archivo, "Modificaciones: %d\n", &registro->modificaciones);
     fscanf(archivo, "Ultimo movimiento: %d %d %d\n",
            &registro->ultimo_movimiento.fila,
-           &registro->ultimo_movimiento.fila,
-           &registro->ultimo_movimiento.fila);
+           &registro->ultimo_movimiento.columna,
+           &registro->ultimo_movimiento.valor);
     fscanf(archivo, "Juego inicial:\n");
     for (i = 0; i < 9; i++) {
         for (j = 0; j < 9; j++) {
